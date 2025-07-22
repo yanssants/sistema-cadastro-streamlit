@@ -1,0 +1,13 @@
+# .gitignore
+
+# Ignorar a pasta de segredos do Streamlit
+.streamlit/
+
+# Ignorar ambientes virtuais
+venv/
+.venv/
+env/
+
+# Ignorar caches do Python
+__pycache__/
+*.pyc
