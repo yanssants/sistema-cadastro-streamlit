@@ -1,5 +1,5 @@
 # page_1.py
-# (Código completo e atualizado para usar Supabase)
+# (Código completo e atualizado para usar Supabase com a nova lógica de "Com Vínculo")
 
 import streamlit as st
 from supabase_client import supabase  # Importa o cliente Supabase centralizado
@@ -28,11 +28,21 @@ def app():
     # --- Seção: Dados Pessoais ---
     with st.expander("Dados Pessoais", expanded=True):
         nome = st.text_input("Nome *", placeholder="Ex: João da Silva")
-        tipo_pessoa = st.radio("Tipo de Pessoa *", ["Sem vínculo", "Candidato", "Liderança"])
+        # Alterado de "Sem vínculo" para "Com vínculo"
+        tipo_pessoa = st.radio("Tipo de Pessoa *", ["Com vínculo", "Candidato", "Liderança"])
+        
+        # Campo condicional para "Com vínculo"
+        if tipo_pessoa == "Com vínculo":
+            vinculo_descricao = st.text_input("Qual Vínculo? *", placeholder="Ex: Indicação do Vereador José")
+        else:
+            vinculo_descricao = ""
+            
+        # Campo condicional para "Liderança"
         if tipo_pessoa == "Liderança":
             candidato_lideranca = st.text_input("Liderança de qual Candidato? *", placeholder="Ex: Maria Oliveira")
         else:
             candidato_lideranca = ""
+            
         st.caption("Preencha os dados pessoais de forma correta para garantir a unicidade do cadastro.")
     
     st.markdown("---")
@@ -102,6 +112,9 @@ def app():
         # Validação dos campos obrigatórios
         if not nome.strip():
             st.warning("O campo **Nome** é obrigatório! Verifique e tente novamente.")
+        # Nova validação para "Com vínculo"
+        elif tipo_pessoa == "Com vínculo" and not vinculo_descricao.strip():
+            st.warning("Você selecionou 'Com vínculo'. Por favor, descreva qual é o vínculo.")
         elif tipo_pessoa == "Liderança" and not candidato_lideranca.strip():
             st.warning("Você selecionou 'Liderança'. Informe, por favor, o nome do candidato associado.")
         elif not telefone.strip():
@@ -112,6 +125,8 @@ def app():
             # Normalização dos dados
             nome_normalizado = nome.strip().title()
             candidato_normalizado = candidato_lideranca.strip().title() if candidato_lideranca else ""
+            # Adicionada a normalização do novo campo
+            vinculo_normalizado = vinculo_descricao.strip() if vinculo_descricao else ""
             municipio_normalizado = municipio.strip().title()
             telefone_formatado = formatar_telefone(telefone)
             tipo_ajuda_normalizado = tipo_ajuda.strip()
@@ -132,6 +147,8 @@ def app():
                     dados_para_inserir = {
                         "nome": nome_normalizado,
                         "tipo_pessoa": tipo_pessoa,
+                        # Adiciona o campo de vínculo. Pode ser necessário criar essa coluna no Supabase.
+                        "vinculo_descricao": vinculo_normalizado, 
                         "candidato_lideranca": candidato_normalizado,
                         "municipio": municipio_normalizado,
                         "telefone": telefone_formatado,
