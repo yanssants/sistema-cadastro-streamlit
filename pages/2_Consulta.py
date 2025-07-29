@@ -1,5 +1,5 @@
 # page_2.py
-# (Código completo e atualizado para usar Supabase)
+# (Código atualizado para exibir o campo "vinculo_descricao")
 
 import streamlit as st
 from supabase_client import supabase # Importa o cliente Supabase centralizado
@@ -43,7 +43,8 @@ def app():
     # Filtros avançados
     with st.expander("Filtros Avançados", expanded=False):
         municipio_filtro = st.selectbox("Filtrar por Município", ["Todos"] + municipios_para)
-        tipo_pessoa_filtro = st.selectbox("Filtrar por Tipo de Pessoa", ["Todos", "Sem vínculo", "Candidato", "Liderança"])
+        # 1. ALTERADO: "Sem vínculo" para "Com vínculo"
+        tipo_pessoa_filtro = st.selectbox("Filtrar por Tipo de Pessoa", ["Todos", "Com vínculo", "Candidato", "Liderança"])
         tipo_ajuda_filtro = st.selectbox("Filtrar por Tipo de Ajuda (Principal)", ["Todos", "Dinheiro", "Cesta Básica", "CredCidadão", "Atendimento Médica", "Exames", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"])
 
     st.markdown("---")
@@ -57,7 +58,6 @@ def app():
 
             # Aplica os filtros se eles foram selecionados
             if nome_busca.strip():
-                # 'ilike' é a versão case-insensitive de 'like'
                 query = query.ilike('nome', f'%{nome_busca.strip()}%')
             
             if municipio_filtro != "Todos":
@@ -79,7 +79,7 @@ def app():
                 st.success(f"{len(resultados)} registro(s) encontrado(s).")
                 st.markdown("---")
 
-                # Exibe os resultados. A lógica de agrupamento não é mais necessária.
+                # Exibe os resultados
                 for dados in resultados:
                     with st.container(border=True):
                         st.markdown(f"### {dados.get('nome', 'Nome não informado')}")
@@ -88,6 +88,9 @@ def app():
                         col1, col2, col3 = st.columns(3)
                         with col1:
                             st.write(f"**Tipo de Pessoa:** {dados.get('tipo_pessoa', 'N/A')}")
+                            # 2. ADICIONADO: Exibe a descrição do vínculo se houver
+                            if dados.get('tipo_pessoa') == "Com vínculo":
+                                st.write(f"**Vínculo:** {dados.get('vinculo_descricao', 'N/A')}")
                             if dados.get('tipo_pessoa') == "Liderança":
                                 st.write(f"**Candidato:** {dados.get('candidato_lideranca', 'N/A')}")
                         with col2:
@@ -98,7 +101,6 @@ def app():
                         st.markdown("---")
                         st.markdown("**Assistência Principal:**", help="Registro inicial feito no formulário.")
                         
-                        # Formata o valor para o padrão monetário brasileiro
                         valor_principal = float(dados.get('valor', 0.0))
                         valor_formatado_principal = f"R$ {valor_principal:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                         
@@ -112,14 +114,11 @@ def app():
                             st.markdown("**Detalhes Adicionais:**")
                             st.info(f"{dados.get('detalhes')}")
                         
-                        # Ajudas extras já vêm aninhadas na resposta da query
                         ajudas_extras = dados.get('ajuda_extra', [])
                         if ajudas_extras:
                             with st.expander(f"Ajudas Extras ({len(ajudas_extras)})", expanded=False):
                                 for ajuda in ajudas_extras:
                                     st.markdown("---")
-                                    
-                                    # Formata o valor da ajuda extra
                                     valor_extra = float(ajuda.get('valor', 0.0))
                                     valor_formatado_extra = f"R$ {valor_extra:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                                     
