@@ -1,8 +1,39 @@
 # page_2.py
-# (Código atualizado para exibir o campo "vinculo_descricao")
+# (Código atualizado para formatar a data e hora de exibição)
 
 import streamlit as st
-from supabase_client import supabase # Importa o cliente Supabase centralizado
+from supabase_client import supabase  # Importa o cliente Supabase centralizado
+from datetime import datetime
+import pytz
+
+# --- NOVA FUNÇÃO PARA FORMATAR A DATA ---
+def formatar_data_hora(data_str):
+    """Converte a data do formato ISO do banco para o fuso de Brasília e formata para exibição."""
+    if not data_str:
+        return "N/A"
+    try:
+        # Define os fusos horários
+        utc_tz = pytz.utc
+        br_tz = pytz.timezone('America/Sao_Paulo')
+        
+        # Converte a string para um objeto datetime (assumindo que o banco está em UTC)
+        # O 'replace' remove o fuso horário para que o 'localize' funcione corretamente
+        if '+' in data_str:
+            data_sem_tz = data_str.split('+')[0]
+            # Algumas datas podem ter microssegundos com 'Z' ou '+', removemos isso.
+            data_obj_utc = datetime.fromisoformat(data_sem_tz)
+        else: # Lida com formatos sem fuso explícito
+             data_obj_utc = datetime.fromisoformat(data_str)
+        
+        # Define que o objeto está em UTC e converte para o fuso de São Paulo
+        data_obj_br = utc_tz.localize(data_obj_utc).astimezone(br_tz)
+        
+        # Formata para o padrão brasileiro
+        return data_obj_br.strftime('%d/%m/%Y - %H:%M')
+    except (ValueError, TypeError):
+        # Se houver algum erro na conversão, retorna o valor original ou N/A
+        return data_str
+
 
 def app():
     st.title("📋 Consulta de Registros")
@@ -43,7 +74,6 @@ def app():
     # Filtros avançados
     with st.expander("Filtros Avançados", expanded=False):
         municipio_filtro = st.selectbox("Filtrar por Município", ["Todos"] + municipios_para)
-        # 1. ALTERADO: "Sem vínculo" para "Com vínculo"
         tipo_pessoa_filtro = st.selectbox("Filtrar por Tipo de Pessoa", ["Todos", "Com vínculo", "Candidato", "Liderança"])
         tipo_ajuda_filtro = st.selectbox("Filtrar por Tipo de Ajuda (Principal)", ["Todos", "Dinheiro", "Cesta Básica", "CredCidadão", "Atendimento Médica", "Exames", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"])
 
@@ -53,7 +83,6 @@ def app():
     if st.button("Buscar", type="primary"):
         try:
             # Constrói a query no Supabase de forma encadeada
-            # 'select("*, ajuda_extra(*)")' faz o "JOIN" automaticamente
             query = supabase.table('ajuda').select('*, ajuda_extra(*)').order('nome', desc=False)
 
             # Aplica os filtros se eles foram selecionados
@@ -83,12 +112,14 @@ def app():
                 for dados in resultados:
                     with st.container(border=True):
                         st.markdown(f"### {dados.get('nome', 'Nome não informado')}")
-                        st.write(f"**Cadastro realizado em:** {dados.get('data_hora', 'N/A')}")
+                        
+                        # --- ATUALIZADO: Usa a função de formatação ---
+                        data_formatada = formatar_data_hora(dados.get('data_hora'))
+                        st.write(f"**Cadastro realizado em:** {data_formatada}")
                         
                         col1, col2, col3 = st.columns(3)
                         with col1:
                             st.write(f"**Tipo de Pessoa:** {dados.get('tipo_pessoa', 'N/A')}")
-                            # 2. ADICIONADO: Exibe a descrição do vínculo se houver
                             if dados.get('tipo_pessoa') == "Com vínculo":
                                 st.write(f"**Vínculo:** {dados.get('vinculo_descricao', 'N/A')}")
                             if dados.get('tipo_pessoa') == "Liderança":
@@ -127,7 +158,10 @@ def app():
                                         st.write(f"**Descrição:** {ajuda.get('descricao_outros')}")
                                     st.write(f"**Quantidade:** {ajuda.get('quantidade', 0)}")
                                     st.write(f"**Valor:** {valor_formatado_extra}")
-                                    st.write(f"**Adicionado em:** {ajuda.get('data_hora', 'N/A')}")
+
+                                    # --- ATUALIZADO: Usa a função de formatação aqui também ---
+                                    data_extra_formatada = formatar_data_hora(ajuda.get('data_hora'))
+                                    st.write(f"**Adicionado em:** {data_extra_formatada}")
                         else:
                             st.info("Nenhuma ajuda extra registrada para esta pessoa.")
                     st.markdown("---")
