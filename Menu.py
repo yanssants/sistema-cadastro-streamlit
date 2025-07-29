@@ -2,10 +2,10 @@
 
 import streamlit as st
 
-# Configuração da página (pode ser a primeira coisa no seu script)
+# Configuração da página (pode ser a primeira coisa no seu script) 🤝
 st.set_page_config(
     page_title="Sistema de Gestão",
-    page_icon="🤝",
+    page_icon="",
     layout="wide"
 )
 
