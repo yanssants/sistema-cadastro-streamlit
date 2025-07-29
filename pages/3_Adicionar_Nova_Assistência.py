@@ -1,9 +1,10 @@
 # page_3.py
-# (Código completo e atualizado para usar Supabase)
+# (Código completo e atualizado para usar Supabase e fuso horário correto)
 
 import streamlit as st
 from supabase_client import supabase  # Importa o cliente Supabase centralizado
 from datetime import datetime
+import pytz # ADICIONADO: Para manipulação de fusos horários
 
 def app():
     st.title("➕ Adicionar Nova Assistência")
@@ -87,7 +88,10 @@ def app():
                     st.error("Para o serviço 'Outros', a descrição é obrigatória.")
                 else:
                     try:
-                        data_hora = datetime.now().strftime("%d/%m/%Y - %H:%M")
+                        # --- LÓGICA DE DATA E HORA COM FUSO HORÁRIO DE BRASÍLIA (ATUALIZADO) ---
+                        br_timezone = pytz.timezone('America/Sao_Paulo')
+                        data_hora_para_banco = datetime.now(br_timezone)
+                        data_hora_display = data_hora_para_banco.strftime("%d/%m/%Y - %H:%M")
                         
                         dados_nova_ajuda = {
                             "ajuda_id": pessoa['id'],
@@ -96,13 +100,13 @@ def app():
                             "detalhes": detalhes.strip(),
                             "quantidade": quantidade,
                             "valor": valor,
-                            "data_hora": data_hora
+                            "data_hora": str(data_hora_para_banco) # ATUALIZADO
                         }
                         
                         insert_response = supabase.table('ajuda_extra').insert(dados_nova_ajuda).execute()
 
                         if insert_response.data:
-                            st.success(f"Nova ajuda adicionada com sucesso para **{pessoa['nome']}** em {data_hora}.")
+                            st.success(f"Nova ajuda adicionada com sucesso para **{pessoa['nome']}** em {data_hora_display}.") # ATUALIZADO
                             # Limpa o estado para permitir uma nova busca
                             st.session_state.pessoa_encontrada = False
                             st.session_state.pessoa_info = None
