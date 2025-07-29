@@ -1,10 +1,11 @@
 # page_1.py
-# (Código completo e atualizado para usar Supabase com a nova lógica de "Com Vínculo")
+# (Código completo e atualizado para usar Supabase com a nova lógica de "Com Vínculo" e Fuso Horário)
 
 import streamlit as st
 from supabase_client import supabase  # Importa o cliente Supabase centralizado
 from datetime import datetime
 import re  # Usado para limpar o telefone
+import pytz # ADICIONADO: Para manipulação de fusos horários
 
 def formatar_telefone(telefone):
     """
@@ -142,8 +143,18 @@ def app():
                     st.warning(f"Já existe um registro com o nome **{nome_normalizado}** e o telefone **{telefone_formatado}**.")
                 else:
                     # Nenhuma duplicata encontrada, prosseguir com a inserção
-                    data_hora = datetime.now().strftime("%d/%m/%Y - %H:%M")
                     
+                    # --- LÓGICA DE DATA E HORA COM FUSO HORÁRIO DE BRASÍLIA ---
+                    # 1. Define o fuso horário de Brasília/São Paulo
+                    br_timezone = pytz.timezone('America/Sao_Paulo')
+                    
+                    # 2. Obtém a data e hora atuais já com o fuso horário aplicado.
+                    # Este é o objeto que será enviado ao banco de dados.
+                    data_hora_para_banco = datetime.now(br_timezone)
+                    
+                    # 3. Cria uma versão formatada da data apenas para exibição na mensagem de sucesso.
+                    data_hora_display = data_hora_para_banco.strftime("%d/%m/%Y - %H:%M")
+
                     dados_para_inserir = {
                         "nome": nome_normalizado,
                         "tipo_pessoa": tipo_pessoa,
@@ -157,17 +168,18 @@ def app():
                         "detalhes": detalhes_normalizados,
                         "quantidade": quantidade,
                         "valor": valor,
-                        "data_hora": data_hora
+                        # ATUALIZADO: Enviando o objeto de data/hora com fuso horário
+                        "data_hora": str(data_hora_para_banco) 
                     }
                     
                     insert_response = supabase.table('ajuda').insert(dados_para_inserir).execute()
 
                     # Verificar se a inserção foi bem-sucedida
                     if insert_response.data:
-                        st.success(f"Registro criado com sucesso em {data_hora}\n\n"
-                                   f"**Detalhes:**\n"
-                                   f"- Nome: {nome_normalizado}\n"
-                                   f"- Telefone: {telefone_formatado}")
+                        st.success(f"Registro criado com sucesso em {data_hora_display}\n\n" # ATUALIZADO: Usando a data formatada para display
+                                     f"**Detalhes:**\n"
+                                     f"- Nome: {nome_normalizado}\n"
+                                     f"- Telefone: {telefone_formatado}")
                     else:
                         st.error(f"Ocorreu um erro ao salvar os dados. Detalhes: {insert_response.error.message}")
 
