@@ -25,7 +25,7 @@ st.markdown(
     - **Cadastro:** Para criar novos registros de assistência.
     - **Consulta:** Para buscar, filtrar e visualizar registros existentes.
     - **Adicionar Nova Ajuda:** Para incluir novas assistências a uma pessoa já cadastrada.
-    - **Editar:** Para modificar ou excluir registros existentes.
+    - **Editar:** Para modificar registros existentes.
     
     Selecione a opção desejada para começar!
     """
