@@ -70,8 +70,8 @@ def app():
         # --- Seção: Formulário para Nova Ajuda ---
         with st.expander("📝 Adicionar Nova Ajuda", expanded=True):
             tipo_ajuda = st.selectbox("Tipo de Ajuda *", [
-                "Dinheiro", "Cesta Básica", "CredCidadão", "Consulta Médica", "Consulta Odontológica", 
-                "Exames Laboratoriais", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"
+                "Dinheiro", "Cesta Básica", "CredCidadão", "Consulta Médica", "Consulta Odontológica", "Cirurgia Médica", 
+            "CredMoradia","Exames Laboratoriais", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"
             ], key="tipo_ajuda_extra")
             
             if tipo_ajuda == "Outros":
