@@ -93,8 +93,8 @@ def app():
     # --- Seção: Solicitação de Ajuda ---
     with st.expander("Assistência Solicitada", expanded=True):
         tipo_ajuda = st.selectbox("Serviço Requerido *", [
-            "Dinheiro", "Cesta Básica", "CredCidadão", "Consulta Médica", "Consulta Odontológica", 
-            "Exames Laboratoriais", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"
+            "Dinheiro", "Cesta Básica", "CredCidadão", "Consulta Médica", "Consulta Odontológica", "Cirurgia Médica", 
+            "CredMoradia","Exames Laboratoriais", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"
         ])
         if tipo_ajuda == "Outros":
             descricao_outros = st.text_area("Descreva o tipo de ajuda:", placeholder="Detalhe o serviço necessário")
