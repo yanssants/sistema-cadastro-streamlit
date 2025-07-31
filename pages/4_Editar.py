@@ -96,7 +96,8 @@ def app():
             
             novo_tel = st.text_input("Telefone *", value=reg.get('telefone', ''))
             
-            servicos = ["Dinheiro", "Cesta Básica", "CredCidadão", "Consulta Médica", "Consulta Odontológica", "Exames Laboratoriais", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"]
+            servicos = ["Dinheiro", "Cesta Básica", "CredCidadão", "Consulta Médica", "Consulta Odontológica", "Cirurgia Médica", 
+            "CredMoradia","Exames Laboratoriais", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"]
             novo_tipo_ajuda = st.selectbox("Serviço Requerido *", servicos, index=servicos.index(reg.get('tipo_ajuda')) if reg.get('tipo_ajuda') in servicos else 0)
             
             novo_desc = st.text_area("Descreva o serviço:", value=reg.get('descricao_outros', '')) if novo_tipo_ajuda == "Outros" else ""
