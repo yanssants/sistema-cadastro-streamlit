@@ -75,7 +75,8 @@ def app():
     with st.expander("Filtros Avançados", expanded=False):
         municipio_filtro = st.selectbox("Filtrar por Município", ["Todos"] + municipios_para)
         tipo_pessoa_filtro = st.selectbox("Filtrar por Tipo de Pessoa", ["Todos", "Com vínculo", "Candidato", "Liderança"])
-        tipo_ajuda_filtro = st.selectbox("Filtrar por Tipo de Ajuda (Principal)", ["Todos", "Dinheiro", "Cesta Básica", "CredCidadão", "Atendimento Médica", "Exames", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"])
+        tipo_ajuda_filtro = st.selectbox("Filtrar por Tipo de Ajuda (Principal)", ["Todos", "Dinheiro", "Cesta Básica", "CredCidadão", "Consulta Médica", "Consulta Odontológica", "Cirurgia Médica", 
+            "CredMoradia","Exames Laboratoriais", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"])
 
     st.markdown("---")
 
