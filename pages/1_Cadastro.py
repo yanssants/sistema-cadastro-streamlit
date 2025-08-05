@@ -1,16 +1,31 @@
 # page_1.py
-# (Código completo e atualizado para usar Supabase com a nova lógica de "Com Vínculo" e Fuso Horário)
+# (Código completo e atualizado para limpar os campos após o envio)
 
 import streamlit as st
 from supabase_client import supabase  # Importa o cliente Supabase centralizado
 from datetime import datetime
 import re  # Usado para limpar o telefone
-import pytz # ADICIONADO: Para manipulação de fusos horários
+
+# Função para definir os valores iniciais ou limpar o estado do formulário
+def inicializar_estado_formulario():
+    """Define ou reseta os valores padrão para cada campo do formulário no session_state."""
+    st.session_state.nome = ""
+    st.session_state.tipo_pessoa = "Com vínculo"
+    st.session_state.vinculo_descricao = ""
+    st.session_state.candidato_lideranca = ""
+    # Define um município padrão (o primeiro da lista)
+    st.session_state.municipio = "Abaetetuba"
+    st.session_state.telefone = ""
+    # Define um tipo de ajuda padrão
+    st.session_state.tipo_ajuda = "Dinheiro"
+    st.session_state.descricao_outros = ""
+    st.session_state.detalhes = ""
+    st.session_state.quantidade = 1
+    st.session_state.valor = 0.0
 
 def formatar_telefone(telefone):
     """
     Remove caracteres não numéricos e formata o telefone para o padrão (XX) XXXXX-XXXX.
-    Caso o número não possua 11 dígitos, retorna o telefone sem formatação.
     """
     if not isinstance(telefone, str):
         return ""
@@ -21,28 +36,24 @@ def formatar_telefone(telefone):
         return telefone
 
 def app():
-    # A conexão com o banco e a criação de tabelas são removidas daqui
-    # pois agora são gerenciadas pelo Supabase.
+    # Garante que o estado do formulário seja inicializado apenas uma vez
+    if 'nome' not in st.session_state:
+        inicializar_estado_formulario()
 
     st.title("Formulário de Assistência")
 
     # --- Seção: Dados Pessoais ---
     with st.expander("Dados Pessoais", expanded=True):
-        nome = st.text_input("Nome *", placeholder="Ex: João da Silva")
-        # Alterado de "Sem vínculo" para "Com vínculo"
-        tipo_pessoa = st.radio("Tipo de Pessoa *", ["Com vínculo", "Candidato", "Liderança"])
+        # Cada widget agora usa uma 'key' para se vincular ao session_state
+        nome = st.text_input("Nome *", placeholder="Ex: João da Silva", key="nome")
+        tipo_pessoa = st.radio("Tipo de Pessoa *", ["Com vínculo", "Candidato", "Liderança"], key="tipo_pessoa")
         
-        # Campo condicional para "Com vínculo"
-        if tipo_pessoa == "Com vínculo":
-            vinculo_descricao = st.text_input("Qual Vínculo? *", placeholder="Ex: Indicação do Vereador José")
-        else:
-            vinculo_descricao = ""
-            
-        # Campo condicional para "Liderança"
-        if tipo_pessoa == "Liderança":
-            candidato_lideranca = st.text_input("Liderança de qual Candidato? *", placeholder="Ex: Maria Oliveira")
-        else:
-            candidato_lideranca = ""
+        # A lógica condicional agora verifica o valor no session_state
+        if st.session_state.tipo_pessoa == "Com vínculo":
+            vinculo_descricao = st.text_input("Qual Vínculo? *", placeholder="Ex: Indicação do Vereador José", key="vinculo_descricao")
+        
+        if st.session_state.tipo_pessoa == "Liderança":
+            candidato_lideranca = st.text_input("Liderança de qual Candidato? *", placeholder="Ex: Maria Oliveira", key="candidato_lideranca")
             
         st.caption("Preencha os dados pessoais de forma correta para garantir a unicidade do cadastro.")
     
@@ -78,14 +89,14 @@ def app():
             "Terra Alta", "Terra Santa", "Tomé-Açu", "Tracuateua", "Trairão", "Tucumã", "Tucuruí", 
             "Ulianópolis", "Uruará", "Vigia", "Viseu", "Vitória do Xingu", "Xinguara"
         ]
-        municipio = st.selectbox("Município *", municipios_para)
+        municipio = st.selectbox("Município *", municipios_para, key="municipio")
         st.caption("Selecione seu município na lista.")
     
     st.markdown("---")
 
     # --- Seção: Contato ---
     with st.expander("Contato", expanded=True):
-        telefone = st.text_input("Telefone *", placeholder="Ex: (91) 98765-4321")
+        telefone = st.text_input("Telefone *", placeholder="Ex: (91) 98765-4321", key="telefone")
         st.caption("Informe seu telefone, será formatado automaticamente.")
     
     st.markdown("---")
@@ -93,97 +104,74 @@ def app():
     # --- Seção: Solicitação de Ajuda ---
     with st.expander("Assistência Solicitada", expanded=True):
         tipo_ajuda = st.selectbox("Serviço Requerido *", [
-            "Dinheiro", "Cesta Básica", "CredCidadão", "Consulta Médica", "Consulta Odontológica", "Cirurgia Médica", 
-            "CredMoradia","Exames Laboratoriais", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"
-        ])
-        if tipo_ajuda == "Outros":
-            descricao_outros = st.text_area("Descreva o tipo de ajuda:", placeholder="Detalhe o serviço necessário")
-        else:
-            descricao_outros = ""
+            "Dinheiro", "Cesta Básica", "CredCidadão", "Consulta Médica", "Consulta Odontológica", 
+            "Exames Laboratoriais", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"
+        ], key="tipo_ajuda")
         
-        detalhes = st.text_area("Detalhes adicionais:", placeholder="Informe qualquer outra informação relevante")
-        quantidade = st.number_input("Quantidade *", min_value=1, value=1, step=1)
-        valor = st.number_input("Valor (R$) *", min_value=0.0, format="%.2f")
+        if st.session_state.tipo_ajuda == "Outros":
+            descricao_outros = st.text_area("Descreva o tipo de ajuda:", placeholder="Detalhe o serviço necessário", key="descricao_outros")
+        
+        detalhes = st.text_area("Detalhes adicionais:", placeholder="Informe qualquer outra informação relevante", key="detalhes")
+        quantidade = st.number_input("Quantidade *", min_value=1, step=1, key="quantidade")
+        valor = st.number_input("Valor (R$) *", min_value=0.0, format="%.2f", key="valor")
         st.caption("Preencha as informações sobre a assistência solicitada.")
     
     st.markdown("---")
 
-    # Botão de envio com a nova lógica do Supabase
     if st.button("Enviar", type="primary"):
-        # Validação dos campos obrigatórios
-        if not nome.strip():
+        # A validação agora usa os valores do st.session_state
+        if not st.session_state.nome.strip():
             st.warning("O campo **Nome** é obrigatório! Verifique e tente novamente.")
-        # Nova validação para "Com vínculo"
-        elif tipo_pessoa == "Com vínculo" and not vinculo_descricao.strip():
+        elif st.session_state.tipo_pessoa == "Com vínculo" and not st.session_state.vinculo_descricao.strip():
             st.warning("Você selecionou 'Com vínculo'. Por favor, descreva qual é o vínculo.")
-        elif tipo_pessoa == "Liderança" and not candidato_lideranca.strip():
+        elif st.session_state.tipo_pessoa == "Liderança" and not st.session_state.candidato_lideranca.strip():
             st.warning("Você selecionou 'Liderança'. Informe, por favor, o nome do candidato associado.")
-        elif not telefone.strip():
+        elif not st.session_state.telefone.strip():
             st.warning("O campo **Telefone** é obrigatório! Certifique-se de preenchê-lo corretamente.")
-        elif tipo_ajuda == "Outros" and not descricao_outros.strip():
+        elif st.session_state.tipo_ajuda == "Outros" and not st.session_state.descricao_outros.strip():
             st.warning("Para o serviço 'Outros' é necessária uma descrição. Por favor, detalhe o tipo de ajuda.")
         else:
-            # Normalização dos dados
-            nome_normalizado = nome.strip().title()
-            candidato_normalizado = candidato_lideranca.strip().title() if candidato_lideranca else ""
-            # Adicionada a normalização do novo campo
-            vinculo_normalizado = vinculo_descricao.strip() if vinculo_descricao else ""
-            municipio_normalizado = municipio.strip().title()
-            telefone_formatado = formatar_telefone(telefone)
-            tipo_ajuda_normalizado = tipo_ajuda.strip()
-            descricao_normalizada = descricao_outros.strip()
-            detalhes_normalizados = detalhes.strip()
+            # Normalização dos dados a partir do session_state
+            nome_normalizado = st.session_state.nome.strip().title()
+            candidato_normalizado = st.session_state.candidato_lideranca.strip().title()
+            vinculo_normalizado = st.session_state.vinculo_descricao.strip()
+            telefone_formatado = formatar_telefone(st.session_state.telefone)
 
             try:
-                # Verificação de duplicatas usando Supabase
                 response = supabase.table('ajuda').select('id').eq('nome', nome_normalizado).eq('telefone', telefone_formatado).execute()
                 
-                # Se 'response.data' não estiver vazia, um registro foi encontrado
                 if response.data:
                     st.warning(f"Já existe um registro com o nome **{nome_normalizado}** e o telefone **{telefone_formatado}**.")
                 else:
-                    # Nenhuma duplicata encontrada, prosseguir com a inserção
+                    data_hora = datetime.now().strftime("%d/%m/%Y - %H:%M")
                     
-                    # --- LÓGICA DE DATA E HORA COM FUSO HORÁRIO DE BRASÍLIA ---
-                    # 1. Define o fuso horário de Brasília/São Paulo
-                    br_timezone = pytz.timezone('America/Sao_Paulo')
-                    
-                    # 2. Obtém a data e hora atuais já com o fuso horário aplicado.
-                    # Este é o objeto que será enviado ao banco de dados.
-                    data_hora_para_banco = datetime.now(br_timezone)
-                    
-                    # 3. Cria uma versão formatada da data apenas para exibição na mensagem de sucesso.
-                    data_hora_display = data_hora_para_banco.strftime("%d/%m/%Y - %H:%M")
-
                     dados_para_inserir = {
                         "nome": nome_normalizado,
-                        "tipo_pessoa": tipo_pessoa,
-                        # Adiciona o campo de vínculo. Pode ser necessário criar essa coluna no Supabase.
+                        "tipo_pessoa": st.session_state.tipo_pessoa,
                         "vinculo_descricao": vinculo_normalizado, 
                         "candidato_lideranca": candidato_normalizado,
-                        "municipio": municipio_normalizado,
+                        "municipio": st.session_state.municipio,
                         "telefone": telefone_formatado,
-                        "tipo_ajuda": tipo_ajuda_normalizado,
-                        "descricao_outros": descricao_normalizada,
-                        "detalhes": detalhes_normalizados,
-                        "quantidade": quantidade,
-                        "valor": valor,
-                        # ATUALIZADO: Enviando o objeto de data/hora com fuso horário
-                        "data_hora": str(data_hora_para_banco) 
+                        "tipo_ajuda": st.session_state.tipo_ajuda,
+                        "descricao_outros": st.session_state.descricao_outros.strip(),
+                        "detalhes": st.session_state.detalhes.strip(),
+                        "quantidade": st.session_state.quantidade,
+                        "valor": st.session_state.valor,
+                        "data_hora": data_hora
                     }
                     
                     insert_response = supabase.table('ajuda').insert(dados_para_inserir).execute()
 
-                    # Verificar se a inserção foi bem-sucedida
                     if insert_response.data:
-                        st.success(f"Registro criado com sucesso em {data_hora_display}\n\n" # ATUALIZADO: Usando a data formatada para display
-                                     f"**Detalhes:**\n"
-                                     f"- Nome: {nome_normalizado}\n"
-                                     f"- Telefone: {telefone_formatado}")
+                        st.success(f"Registro criado com sucesso em {data_hora}!")
+                        # Limpa o formulário e força o recarregamento da página
+                        inicializar_estado_formulario()
+                        st.rerun()
                     else:
                         st.error(f"Ocorreu um erro ao salvar os dados. Detalhes: {insert_response.error.message}")
 
             except Exception as e:
-                st.error(f"Ocorreu um erro na comunicação com o banco de dados. Por favor, verifique a conexão e as credenciais.")
+                st.error(f"Ocorreu um erro na comunicação com o banco de dados.")
                 st.error(f"Detalhes do erro: {e}")
+
 app()
