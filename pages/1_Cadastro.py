@@ -1,10 +1,10 @@
 # page_1.py
-# (Código completo e atualizado para limpar os campos após o envio)
+# (Código completo e atualizado)
 
 import streamlit as st
 from supabase_client import supabase  # Importa o cliente Supabase centralizado
 from datetime import datetime
-import re  # Usado para limpar o telefone
+import re
 
 # Função para definir os valores iniciais ou limpar o estado do formulário
 def inicializar_estado_formulario():
@@ -104,8 +104,8 @@ def app():
     # --- Seção: Solicitação de Ajuda ---
     with st.expander("Assistência Solicitada", expanded=True):
         tipo_ajuda = st.selectbox("Serviço Requerido *", [
-            "Dinheiro", "Cesta Básica", "CredCidadão", "Consulta Médica", "Consulta Odontológica", 
-            "Exames Laboratoriais", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"
+            "Dinheiro", "Cesta Básica", "CredCidadão", "Consulta Médica", "Consulta Odontológica", "Cirurgia Médica", 
+            "CredMoradia","Exames Laboratoriais", "Emprego", "Internação Hospitalar", "Transporte/Passagem", "Outros"
         ], key="tipo_ajuda")
         
         if st.session_state.tipo_ajuda == "Outros":
@@ -143,7 +143,8 @@ def app():
                 if response.data:
                     st.warning(f"Já existe um registro com o nome **{nome_normalizado}** e o telefone **{telefone_formatado}**.")
                 else:
-                    data_hora = datetime.now().strftime("%d/%m/%Y - %H:%M")
+                    # Salva a data no formato ISO 8601, que é o padrão para bancos de dados
+                    data_hora = datetime.now().isoformat()
                     
                     dados_para_inserir = {
                         "nome": nome_normalizado,
@@ -163,7 +164,7 @@ def app():
                     insert_response = supabase.table('ajuda').insert(dados_para_inserir).execute()
 
                     if insert_response.data:
-                        st.success(f"Registro criado com sucesso em {data_hora}!")
+                        st.success(f"Registro criado com sucesso!")
                         # Limpa o formulário e força o recarregamento da página
                         inicializar_estado_formulario()
                         st.rerun()
