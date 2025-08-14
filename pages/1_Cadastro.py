@@ -31,7 +31,9 @@ def formatar_telefone(telefone):
         return telefone
 
 def processar_envio():
-    """Função de callback para validar e processar o envio do formulário."""
+    """
+    Função de callback para validar e processar o envio do formulário.
+    """
     # Validação dos campos usando os valores do st.session_state
     if not st.session_state.nome.strip():
         st.warning("O campo **Nome** é obrigatório! Verifique e tente novamente.")
@@ -46,18 +48,22 @@ def processar_envio():
     else:
         # Se a validação passar, continua para a inserção no banco
         nome_normalizado = st.session_state.nome.strip().title()
-        candidato_normalizado = st.session_state.candidato_lideranca.strip().title()
-        vinculo_normalizado = st.session_state.vinculo_descricao.strip()
-        telefone_formatado = formatar_telefone(st.session_state.telefone)
 
         try:
-            response = supabase.table('ajuda').select('id').eq('nome', nome_normalizado).eq('telefone', telefone_formatado).execute()
+            # Verifica a existência de duplicata apenas pelo nome
+            response = supabase.table('ajuda').select('id').eq('nome', nome_normalizado).execute()
             
             if response.data:
-                st.warning(f"Já existe um registro com o nome **{nome_normalizado}** e o telefone **{telefone_formatado}**.")
+                # Mensagem de aviso mais específica
+                st.warning(f"O nome **{nome_normalizado}** já possui um registro no sistema.")
             else:
+                # Normalização dos outros dados
+                candidato_normalizado = st.session_state.candidato_lideranca.strip().title()
+                vinculo_normalizado = st.session_state.vinculo_descricao.strip()
+                telefone_formatado = formatar_telefone(st.session_state.telefone)
                 data_hora = datetime.now().isoformat()
                 
+                # Dados para inserir no banco
                 dados_para_inserir = {
                     "nome": nome_normalizado,
                     "tipo_pessoa": st.session_state.tipo_pessoa,
