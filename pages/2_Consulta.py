@@ -1,39 +1,9 @@
 # page_2.py
-# (Código atualizado para formatar a data e hora de exibição)
+# (Código completo e atualizado)
 
 import streamlit as st
-from supabase_client import supabase  # Importa o cliente Supabase centralizado
+from supabase_client import supabase # Importa o cliente Supabase centralizado
 from datetime import datetime
-import pytz
-
-# --- NOVA FUNÇÃO PARA FORMATAR A DATA ---
-def formatar_data_hora(data_str):
-    """Converte a data do formato ISO do banco para o fuso de Brasília e formata para exibição."""
-    if not data_str:
-        return "N/A"
-    try:
-        # Define os fusos horários
-        utc_tz = pytz.utc
-        br_tz = pytz.timezone('America/Sao_Paulo')
-        
-        # Converte a string para um objeto datetime (assumindo que o banco está em UTC)
-        # O 'replace' remove o fuso horário para que o 'localize' funcione corretamente
-        if '+' in data_str:
-            data_sem_tz = data_str.split('+')[0]
-            # Algumas datas podem ter microssegundos com 'Z' ou '+', removemos isso.
-            data_obj_utc = datetime.fromisoformat(data_sem_tz)
-        else: # Lida com formatos sem fuso explícito
-             data_obj_utc = datetime.fromisoformat(data_str)
-        
-        # Define que o objeto está em UTC e converte para o fuso de São Paulo
-        data_obj_br = utc_tz.localize(data_obj_utc).astimezone(br_tz)
-        
-        # Formata para o padrão brasileiro
-        return data_obj_br.strftime('%d/%m/%Y - %H:%M')
-    except (ValueError, TypeError):
-        # Se houver algum erro na conversão, retorna o valor original ou N/A
-        return data_str
-
 
 def app():
     st.title("📋 Consulta de Registros")
@@ -41,7 +11,7 @@ def app():
     # Campo de busca por nome
     nome_busca = st.text_input("🔍 Buscar por nome", placeholder="Digite o nome completo ou parte dele")
     
-    # Lista de municípios (igual à utilizada na page 1)
+    # Lista de municípios
     municipios_para = [
         "Abaetetuba", "Abel Figueiredo", "Acará", "Afuá", "Água Azul do Norte", "Alenquer", 
         "Almeirim", "Altamira", "Anajás", "Ananindeua", "Anapu", "Augusto Corrêa", 
@@ -80,13 +50,10 @@ def app():
 
     st.markdown("---")
 
-    # Botão para realizar a busca com a nova lógica do Supabase
     if st.button("Buscar", type="primary"):
         try:
-            # Constrói a query no Supabase de forma encadeada
             query = supabase.table('ajuda').select('*, ajuda_extra(*)').order('nome', desc=False)
 
-            # Aplica os filtros se eles foram selecionados
             if nome_busca.strip():
                 query = query.ilike('nome', f'%{nome_busca.strip()}%')
             
@@ -99,7 +66,6 @@ def app():
             if tipo_ajuda_filtro != "Todos":
                 query = query.eq('tipo_ajuda', tipo_ajuda_filtro)
             
-            # Executa a query
             response = query.execute()
             resultados = response.data
 
@@ -109,14 +75,21 @@ def app():
                 st.success(f"{len(resultados)} registro(s) encontrado(s).")
                 st.markdown("---")
 
-                # Exibe os resultados
                 for dados in resultados:
                     with st.container(border=True):
                         st.markdown(f"### {dados.get('nome', 'Nome não informado')}")
                         
-                        # --- ATUALIZADO: Usa a função de formatação ---
-                        data_formatada = formatar_data_hora(dados.get('data_hora'))
-                        st.write(f"**Cadastro realizado em:** {data_formatada}")
+                        # Formata a data e hora do banco para um formato amigável
+                        data_hora_db = dados.get('data_hora')
+                        data_hora_formatada = "N/A"
+                        if data_hora_db:
+                            try:
+                                data_obj = datetime.fromisoformat(data_hora_db)
+                                data_hora_formatada = data_obj.strftime('%d/%m/%Y - %H:%M')
+                            except (ValueError, TypeError):
+                                data_hora_formatada = data_hora_db
+
+                        st.write(f"**Cadastro realizado em:** {data_hora_formatada}")
                         
                         col1, col2, col3 = st.columns(3)
                         with col1:
@@ -151,6 +124,17 @@ def app():
                             with st.expander(f"Ajudas Extras ({len(ajudas_extras)})", expanded=False):
                                 for ajuda in ajudas_extras:
                                     st.markdown("---")
+                                    
+                                    # Formatação da data para ajudas extras
+                                    data_extra_db = ajuda.get('data_hora')
+                                    data_extra_formatada = "N/A"
+                                    if data_extra_db:
+                                        try:
+                                            data_obj_extra = datetime.fromisoformat(data_extra_db)
+                                            data_extra_formatada = data_obj_extra.strftime('%d/%m/%Y - %H:%M')
+                                        except (ValueError, TypeError):
+                                            data_extra_formatada = data_extra_db
+                                    
                                     valor_extra = float(ajuda.get('valor', 0.0))
                                     valor_formatado_extra = f"R$ {valor_extra:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
                                     
@@ -159,9 +143,6 @@ def app():
                                         st.write(f"**Descrição:** {ajuda.get('descricao_outros')}")
                                     st.write(f"**Quantidade:** {ajuda.get('quantidade', 0)}")
                                     st.write(f"**Valor:** {valor_formatado_extra}")
-
-                                    # --- ATUALIZADO: Usa a função de formatação aqui também ---
-                                    data_extra_formatada = formatar_data_hora(ajuda.get('data_hora'))
                                     st.write(f"**Adicionado em:** {data_extra_formatada}")
                         else:
                             st.info("Nenhuma ajuda extra registrada para esta pessoa.")
